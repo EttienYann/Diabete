@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import sklearn
+import sklearn.preprocessing
+import sklearn.linear_model
 import pickle as pkl
 
 # DESCRIPTION
