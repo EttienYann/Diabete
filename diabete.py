@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import pickle as pkl
 import sklearn
+from sklearn.preprocessing import MinMaxScaler
+
 
 # Configuration de la page
 st.set_page_config(page_title="Prédiction du Diabète", page_icon="🩺", layout="centered")
@@ -39,6 +41,11 @@ def accueil():
 def prediction():
     st.title('Prédiction du Diabète')
     st.markdown('**Développé par Ettien Kouassi Yann Guy Axel**')
+
+    #CHARGEMENT DU SCALER
+    scaler_filename = "scaler.pkl"
+    with open(scaler_filename, 'rb') as file:
+        scaler = pkl.load(file)
     
     # CHARGEMENT DU MODEL
     try:
@@ -47,11 +54,17 @@ def prediction():
     except FileNotFoundError:
         st.error("Le fichier du modèle est introuvable. Assurez-vous que 'model_rf_end.pkl' est dans le répertoire.")
         st.stop()
-
+    # Exemple de fonction pour transformer de nouvelles données
+    def scale_new_data(data):
+        scaled_data = pd.DataFrame(scaler.transform(data), columns=data.columns)
+        return scaled_data
     # DEFINITION DE LA FONCTION D'INFERENCE (PERMET DE FAIRE LA PREDICTION)
     def inference(Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age):
         data = np.array([Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age])
-        diabete_predict = model.predict(data.reshape(1, -1))
+        # Mise à l'échelle des nouvelles données avec le scaler chargé
+        scaled_data = scale_new_data(pd.DataFrame(data.reshape(1, -1), columns=['Pregnancies', 'Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI', 'DiabetesPedigreeFunction', 'Age']))
+        diabete_predict = model.predict(scaled_data)
+        
         return diabete_predict
 
     # CHAMPS DE SAISIE
