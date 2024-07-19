@@ -1,46 +1,90 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import sklearn
-import sklearn.preprocessing
-import sklearn.linear_model
 import pickle as pkl
+import sklearn
 
-# DESCRIPTION
-st.title('DIABETES PREDICTION')
+# Configuration de la page
+st.set_page_config(page_title="Prédiction du Diabète", page_icon="🩺", layout="centered")
 
-st.text('DEVELOPPER PAR ETTIEN KOUASSI YANN GUY AXEL')
+# Fonction pour afficher la page d'accueil
+def accueil():
+    st.image("diabete_banner.jpeg", width=500)  
+    st.title('Bienvenue sur l\'application de Prédiction du Diabète')
+    st.markdown('**Développé par Ettien Kouassi Yann Guy Axel**')
+    st.markdown("""
+    <style>
+    .stButton>button {
+        color: white;
+        background-color: #4CAF50;
+        border: none;
+        padding: 10px 24px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        transition-duration: 0.4s;
+        cursor: pointer;
+    }
+    .stButton>button:hover {
+        background-color: #45a049;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    if st.button('Passer à la Prédiction'):
+        st.session_state.page = 'Prédiction'
 
- #CHARGEMENT DU MODEL
-file = open("model_rf_end.pkl","rb")
-model = pkl.load(file)
-file.close()
+# Fonction pour afficher la page de prédiction
+def prediction():
+    st.title('Prédiction du Diabète')
+    st.markdown('**Développé par Ettien Kouassi Yann Guy Axel**')
+    
+    # CHARGEMENT DU MODEL
+    try:
+        with open("model_rf_end.pkl", "rb") as file:
+            model = pkl.load(file)
+    except FileNotFoundError:
+        st.error("Le fichier du modèle est introuvable. Assurez-vous que 'model_rf_end.pkl' est dans le répertoire.")
+        st.stop()
 
- ##4 DEFINITION DE LA FONCTION D'INTERFERENCE(PERMET DE FAIRE LA PREDICTION)
+    # DEFINITION DE LA FONCTION D'INFERENCE (PERMET DE FAIRE LA PREDICTION)
+    def inference(Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age):
+        data = np.array([Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age])
+        diabete_predict = model.predict(data.reshape(1, -1))
+        return diabete_predict
 
-def inference(Pregnancies,Glucose,BloodPressure,SkinThickness,Insulin,BMI,DiabetesPedigreeFunction,Age):
-    data = np.array([Pregnancies,Glucose,BloodPressure,SkinThickness,Insulin,BMI,DiabetesPedigreeFunction,Age])
-    #df = pd.DataFrame(data,columns=['household_size', 'age_of_respondent', 'location_type', 'cellphone_access', 'gender_of_respondent', 'education_level_Primary', 'DiabetesPedigreeFunction', 'education_level_Vocational', 'employed_Government', 'employed_Private'])
-    diabete_predict = model.predict(data.reshape(1,-1))
-    return diabete_predict
+    # CHAMPS DE SAISIE
+    st.header("Veuillez entrer les informations suivantes :")
+    col1, col2 = st.columns(2)
 
-#CHAMPS DE SAISIE
+    with col1:
+        Pregnancies = st.number_input("Nombre de grossesses :", min_value=0, step=1)
+        Glucose = st.number_input("Concentration de glucose dans le plasma sanguin à jeun :", min_value=0, step=1)
+        BloodPressure = st.number_input("Pression artérielle diastolique (mm Hg) :", min_value=0, step=1)
+        SkinThickness = st.number_input("Épaisseur du pli cutané tricipital (mm) :", min_value=0, step=1)
 
-Pregnancies=st.number_input("Nombre de grossesses :" ,min_value=0 ,step=1)
-Glucose = st.number_input("concentration de glucose dans le plasma sanguin à jeun :" ,min_value=0 ,step=1)
-BloodPressure=  st.number_input(" pression artérielle diastolique (mm Hg) :" ,min_value=0 ,step=1)
-SkinThickness =  st.number_input(" épaisseur du pli cutané tricipital (mm) :" ,min_value=0 ,step=1)
-Insulin = st.number_input(" taux d'insuline sérique de 2 heures (mu U/ml):" ,min_value=0 ,step=1)
-BMI = st.number_input(" indice de masse corporelle (kg/m²):" ,min_value=0.0 ,step=0.1,format="%.1f")
-DiabetesPedigreeFunction= st.number_input(" fonction pedigree du diabète:" ,min_value=0.0 ,step=0.1,format="%.3f")
-Age =st.number_input(" âge (années):" ,min_value=0 ,step=1)
+    with col2:
+        Insulin = st.number_input("Taux d'insuline sérique de 2 heures (mu U/ml) :", min_value=0, step=1)
+        BMI = st.number_input("Indice de masse corporelle (kg/m²) :", min_value=0.0, step=0.1, format="%.1f")
+        DiabetesPedigreeFunction = st.number_input("Fonction pedigree du diabète :", min_value=0.0, step=0.1, format="%.3f")
+        Age = st.number_input("Âge (années) :", min_value=0, step=1)
 
- #6CREATION DU BOUTON DE PREDICTION
-
-if st.button('Prédire') :
-    result_pred = inference(Pregnancies,Glucose,BloodPressure,SkinThickness,Insulin,BMI,DiabetesPedigreeFunction,Age)
+    # CREATION DU BOUTON DE PREDICTION
+    if st.button('Prédire'):
+        result_pred = inference(Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age)
         
-    if result_pred[0]== 0 :
-        st.warning("La personne n'est pas succeptible d'avoir un Diabetes")
-    elif result_pred[0] ==1:
-        st.success("La personne est succeptible d'avoir un Diabetes")
+        if result_pred[0] == 0:
+            st.warning("La personne n'est pas susceptible d'avoir un diabète.")
+        elif result_pred[0] == 1:
+            st.success("La personne est susceptible d'avoir un diabète.")
+
+# Utilisation de la session pour suivre l'état de la page
+if 'page' not in st.session_state:
+    st.session_state.page = 'Accueil'
+
+# Affichage de la page en fonction de l'état
+if st.session_state.page == 'Accueil':
+    accueil()
+elif st.session_state.page == 'Prédiction':
+    prediction()
